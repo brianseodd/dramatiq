@@ -359,7 +359,8 @@ class _RedisConsumer(Consumer):
                     # If there are fewer messages currently being
                     # processed than we're allowed to prefetch,
                     # prefetch up to that number of messages.
-                    for i in range(5):
+                    retry_count = 5
+                    for i in range(retry_count):
                         messages = []
                         if self.outstanding_message_count < self.prefetch:
                             try:
@@ -369,7 +370,10 @@ class _RedisConsumer(Consumer):
                                 )
                                 break
                             except ResponseError as exc:
-                                print(f"caught response error {str(exc)} retrying {i} more times")
+                                if i < retry_count:
+                                    print(f"caught response error {str(exc)} retrying {i} more times")
+                                else:
+                                    raise exc
 
                     # Because we didn't get any messages, we should
                     # progressively long poll up to the idle timeout.
